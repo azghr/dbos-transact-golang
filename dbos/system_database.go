@@ -164,6 +164,9 @@ var migration7SQL string
 //go:embed migrations/8_add_parent_workflow_id.sql
 var migration8SQL string
 
+//go:embed migrations/9_add_notifications_pkey.sql
+var migration9SQL string
+
 type migrationFile struct {
 	version int64
 	sql     string
@@ -221,6 +224,8 @@ func runMigrations(ctx context.Context, pool *pgxpool.Pool, schema string, isCoc
 
 	migration8SQLProcessed := fmt.Sprintf(migration8SQL, sanitizedSchema, sanitizedSchema)
 
+	migration9SQLProcessed := fmt.Sprintf(migration9SQL, sanitizedSchema, sanitizedSchema)
+
 	// Build migrations list with processed SQL
 	migrations := []migrationFile{
 		{version: 1, sql: migration1SQLProcessed},
@@ -231,6 +236,7 @@ func runMigrations(ctx context.Context, pool *pgxpool.Pool, schema string, isCoc
 		{version: 6, sql: migration6SQLProcessed},
 		{version: 7, sql: migration7SQLProcessed},
 		{version: 8, sql: migration8SQLProcessed},
+		{version: 9, sql: migration9SQLProcessed},
 	}
 
 	// Begin transaction for atomic migration execution
@@ -1156,7 +1162,7 @@ func (s *sysDB) resumeWorkflow(ctx context.Context, input resumeWorkflowDBInput)
 
 	// Set the workflow's status to ENQUEUED and clear its recovery attempts, set new deadline
 	updateStatusQuery := fmt.Sprintf(`UPDATE %s.workflow_status
-						  SET status = $1, queue_name = $2, recovery_attempts = $3, 
+						  SET status = $1, queue_name = $2, recovery_attempts = $3,
 						      workflow_deadline_epoch_ms = NULL, deduplication_id = NULL,
 						      started_at_epoch_ms = NULL, updated_at = $4
 						  WHERE workflow_uuid = $5`, pgx.Identifier{s.schema}.Sanitize())
@@ -2559,11 +2565,11 @@ func (s *sysDB) writeStream(ctx context.Context, input writeStreamDBInput) error
 		return s.pool.Exec(ctx, sql, args...)
 	}
 
-	checkClosedQuery := fmt.Sprintf(`SELECT 1 FROM %s.streams 
+	checkClosedQuery := fmt.Sprintf(`SELECT 1 FROM %s.streams
 		WHERE workflow_uuid = $1 AND key = $2 AND value = $3 LIMIT 1`,
 		pgx.Identifier{s.schema}.Sanitize())
 
-	getOffsetQuery := fmt.Sprintf(`SELECT COALESCE(MAX("offset"), -1) + 1 FROM %s.streams 
+	getOffsetQuery := fmt.Sprintf(`SELECT COALESCE(MAX("offset"), -1) + 1 FROM %s.streams
 		WHERE workflow_uuid = $1 AND key = $2`,
 		pgx.Identifier{s.schema}.Sanitize())
 
@@ -2598,7 +2604,7 @@ func (s *sysDB) writeStream(ctx context.Context, input writeStreamDBInput) error
 // readStream reads stream entries starting from a given offset.
 // Returns the entries, whether the stream is closed, and any error.
 func (s *sysDB) readStream(ctx context.Context, input readStreamDBInput) ([]streamEntry, bool, error) {
-	query := fmt.Sprintf(`SELECT value, "offset" FROM %s.streams 
+	query := fmt.Sprintf(`SELECT value, "offset" FROM %s.streams
 		WHERE workflow_uuid = $1 AND key = $2 AND "offset" >= $3
 		ORDER BY "offset" ASC`,
 		pgx.Identifier{s.schema}.Sanitize())
