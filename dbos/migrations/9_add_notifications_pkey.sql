@@ -6,9 +6,12 @@
 DO $$
 BEGIN
     IF NOT EXISTS (
-        SELECT 1 FROM pg_constraint
-        WHERE conrelid = '%s.notifications'::regclass
-          AND contype = 'p'
+        SELECT 1 FROM pg_constraint c
+        JOIN pg_class cl ON c.conrelid = cl.oid
+        JOIN pg_namespace n ON cl.relnamespace = n.oid
+        WHERE n.nspname = '%s'
+          AND cl.relname = 'notifications'
+          AND c.contype = 'p'
     ) THEN
         ALTER TABLE %s.notifications ADD PRIMARY KEY (message_uuid);
     END IF;

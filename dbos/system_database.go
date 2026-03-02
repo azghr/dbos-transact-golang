@@ -224,7 +224,7 @@ func runMigrations(ctx context.Context, pool *pgxpool.Pool, schema string, isCoc
 
 	migration8SQLProcessed := fmt.Sprintf(migration8SQL, sanitizedSchema, sanitizedSchema)
 
-	migration9SQLProcessed := fmt.Sprintf(migration9SQL, sanitizedSchema, sanitizedSchema)
+	migration9SQLProcessed := fmt.Sprintf(migration9SQL, schema, sanitizedSchema)
 
 	// Build migrations list with processed SQL
 	migrations := []migrationFile{
