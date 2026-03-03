@@ -50,7 +50,7 @@ CREATE TABLE %s.notifications (
     topic TEXT,
     message TEXT NOT NULL,
     created_at_epoch_ms BIGINT NOT NULL DEFAULT (EXTRACT(epoch FROM now())::numeric * 1000)::bigint,
-    message_uuid TEXT NOT NULL DEFAULT gen_random_uuid(), -- Built-in function
+    message_uuid TEXT NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY, -- Built-in function
     FOREIGN KEY (destination_uuid) REFERENCES %s.workflow_status(workflow_uuid) 
         ON UPDATE CASCADE ON DELETE CASCADE
 );
