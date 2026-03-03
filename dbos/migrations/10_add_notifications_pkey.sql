@@ -1,4 +1,4 @@
--- Migration 9: Add primary key to notifications table
+-- Migration 10: Add primary key to notifications table
 -- An earlier version of DBOS had a bug where this table was created without a primary key.
 -- The initial migration has been changed to create a key, and this migration creates the key
 -- for existing applications.
