@@ -227,13 +227,11 @@ func runMigrations(ctx context.Context, pool *pgxpool.Pool, schema string, isCoc
 
 	migration8SQLProcessed := fmt.Sprintf(migration8SQL, sanitizedSchema, sanitizedSchema)
 
-  migration9SQLProcessed := fmt.Sprintf(migration9SQL, sanitizedSchema)
-  
+	migration9SQLProcessed := fmt.Sprintf(migration9SQL, sanitizedSchema)
+
 	migration10SQLProcessed := fmt.Sprintf(migration10SQL, schema, sanitizedSchema)
 
 	// Build migrations list with processed SQL
-	// NOTE: Migration 9 will be added from PR #261
-	// TODO: Add migration 9 once PR #261 is merged
 	migrations := []migrationFile{
 		{version: 1, sql: migration1SQLProcessed},
 		{version: 2, sql: migration2SQLProcessed},
@@ -244,7 +242,7 @@ func runMigrations(ctx context.Context, pool *pgxpool.Pool, schema string, isCoc
 		{version: 7, sql: migration7SQLProcessed},
 		{version: 8, sql: migration8SQLProcessed},
 		{version: 9, sql: migration9SQLProcessed},
- 		{version: 10, sql: migration10SQLProcessed},
+		{version: 10, sql: migration10SQLProcessed},
 	}
 
 	// Begin transaction for atomic migration execution
