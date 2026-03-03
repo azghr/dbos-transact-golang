@@ -299,10 +299,37 @@ func runMigrations(ctx context.Context, pool *pgxpool.Pool, schema string, isCoc
 			continue
 		}
 
-		// Execute the migration SQL
-		_, err = tx.Exec(ctx, migration.sql)
-		if err != nil {
-			return fmt.Errorf("failed to execute migration %d: %v", migration.version, err)
+		// Migration 10 uses a DO block with ALTER TABLE, which CockroachDB does not support.
+		// Run the same logic at the application layer.
+		if migration.version == 10 && isCockroach {
+			checkPKQuery := `SELECT 1 FROM pg_constraint c
+		JOIN pg_class cl ON c.conrelid = cl.oid
+		JOIN pg_namespace n ON cl.relnamespace = n.oid
+		WHERE n.nspname = $1
+		  AND cl.relname = 'notifications'
+		  AND c.contype = 'p'`
+			rows, err := tx.Query(ctx, checkPKQuery, schema)
+			if err != nil {
+				return fmt.Errorf("failed to check notifications primary key for migration 10: %v", err)
+			}
+			hasPK := rows.Next()
+			rows.Close()
+			if err := rows.Err(); err != nil {
+				return fmt.Errorf("failed to check notifications primary key for migration 10: %v", err)
+			}
+			if !hasPK {
+				alterQuery := fmt.Sprintf("ALTER TABLE %s.notifications ADD CONSTRAINT notifications_pkey PRIMARY KEY (message_uuid)", pgx.Identifier{schema}.Sanitize())
+				_, err = tx.Exec(ctx, alterQuery)
+				if err != nil {
+					return fmt.Errorf("failed to execute migration 10: %v", err)
+				}
+			}
+		} else {
+			// Execute the migration SQL
+			_, err = tx.Exec(ctx, migration.sql)
+			if err != nil {
+				return fmt.Errorf("failed to execute migration %d: %v", migration.version, err)
+			}
 		}
 
 		// Update the migration version
