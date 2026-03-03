@@ -232,6 +232,11 @@ func runMigrations(ctx context.Context, pool *pgxpool.Pool, schema string, isCoc
 	migration10SQLProcessed := fmt.Sprintf(migration10SQL, schema, sanitizedSchema)
 
 	// Build migrations list with processed SQL
+<<<<<<< HEAD
+=======
+	// NOTE: Migration 10 will be added from PR #261
+	// TODO: Add migration 10 once PR #261 is merged
+>>>>>>> azghr/azghr/pkey
 	migrations := []migrationFile{
 		{version: 1, sql: migration1SQLProcessed},
 		{version: 2, sql: migration2SQLProcessed},
